@@ -72,6 +72,245 @@
 #include "ciaaPOSIX_string.h" /* <= string header */
 #include "ciaak.h"            /* <= ciaa kernel header */
 #include "blinking_echo.h"         /* <= own header */
+// #include "ciaaUART.h"
+
+#ifndef CIAAUART_H_
+#define CIAAUART_H_
+
+#warning "FIXME: este parche deberia ser reemplazado por algo aceptable"
+#ifdef FALSE
+#undef FALSE
+#endif
+
+#ifdef TRUE
+#undef TRUE
+#endif
+
+#include "chip.h"
+#include "string.h"
+
+
+typedef enum _ciaaUarts_e
+{
+        CIAA_UART_485 = 0,
+        CIAA_UART_USB = 1,
+        CIAA_UART_232 = 2
+}ciaaUART_e;
+
+
+#define rs485Print(x) uartSend(0, (uint8_t *)(x), strlen(x))
+#define dbgPrint(x)   uartSend(1, (uint8_t *)(x), strlen(x))
+#define rs232Print(x) uartSend(2, (uint8_t *)(x), strlen(x))
+
+#define UART_BUF_SIZE   512
+#define UART_RX_FIFO_SIZE 16
+
+typedef struct _uartData
+{
+        LPC_USART_T * uart;
+        RINGBUFF_T * rrb;
+        RINGBUFF_T * trb;
+}uartData_t;
+
+
+void ciaaUARTInit(void);
+int uartSend(ciaaUART_e nUART, void * data, int datalen);
+int uartRecv(ciaaUART_e nUART, void * data, int datalen);
+
+#endif /* CIAAUART_H_ */
+
+uint8_t rxbuf[3][UART_BUF_SIZE];
+uint8_t txbuf[3][UART_BUF_SIZE];
+
+RINGBUFF_T rrb[3];
+RINGBUFF_T trb[3];
+
+
+uartData_t uarts[3] =
+{
+        { LPC_USART0, &(rrb[0]), &(trb[0]) },
+        { LPC_USART2, &(rrb[1]), &(trb[1]) },
+        { LPC_USART3, &(rrb[2]), &(trb[2]) },
+};
+
+// El kernel hace algunas de estas tareas drivers?
+#define CIAAKSTART 1
+
+// poner en 1 si se usa el posixopen para usb-uart
+#define OPEN_FTDI232 0
+
+// poner en 1 si se usa el posixopen para rs232
+#define OPEN_RS232 0
+
+// si el poil declara la interrupción ajustar en 1
+#define OIL_EN_IRQ_USART3   1
+
+// si el poil declara la interrupción ajustar en 1
+#define OIL_EN_IRQ_USART2   1
+
+void ciaaUARTInit(void)
+{
+    /* UART2 (USB-UART) */
+#define ENABLEUSB 1
+#if ENABLEUSB
+/*  desde ciaak_start();
+    luego ciaaDriverUart_init();
+    luego ciaaDriverUart_hwInit(); */
+
+#ifndef CIAAKSTART
+    /* UART2 (USB-UART) */
+    /* Chip_UART_Init(LPC_USART2); */
+    /* Chip_UART_SetBaud(LPC_USART2, 115200); */
+
+    /* esto lo agrega openOSEK-ciaa */
+    /* Chip_UART_SetupFIFOS(LPC_USART2, UART_FCR_FIFO_EN | UART_FCR_TRG_LEV0); */
+
+    /* Chip_UART_TXEnable(LPC_USART2); */
+
+    /* Chip_SCU_PinMux(7, 1, MD_PDN, FUNC6);              */ /* P7_1: UART2_TXD */
+    /* Chip_SCU_PinMux(7, 2, MD_PLN|MD_EZI|MD_ZI, FUNC6); */ /* P7_2: UART2_RXD */
+
+    /* UART2 (USB-UART) */
+    Chip_UART_Init(LPC_USART2);
+    Chip_UART_SetBaud(LPC_USART2, 115200);
+
+    Chip_UART_TXEnable(LPC_USART2);
+
+    Chip_SCU_PinMux(7, 1, MD_PDN, FUNC6);              /* P7_1: UART2_TXD */
+    Chip_SCU_PinMux(7, 2, MD_PLN|MD_EZI|MD_ZI, FUNC6); /* P7_2: UART2_RXD */
+#endif /* CIAAKSTART */
+
+/*  desde ciaaPOSIX_open("/dev/serial/uart/1", ciaaPOSIX_O_RDWR);
+    luego ciaaPOSIX_open(char const * path, uint8_t oflag);
+    luego ciaaPOSIX_assert(serialDevice->device->open(path, (ciaaDevices_deviceType *)device->loLayer, oflag) == device->loLayer);
+    luego ciaaDevices_deviceType * ciaaDriverUart_open(char const * path, ciaaDevices_deviceType * device, uint8_t const oflag) */
+#if OPEN_FTDI232
+#else
+    /* Restart FIFOS: set Enable, Reset content, set trigger level */
+    /* Chip_UART_SetupFIFOS((LPC_USART_T *)device->loLayer, UART_FCR_FIFO_EN | UART_FCR_TX_RS | UART_FCR_RX_RS | UART_FCR_TRG_LEV0); */
+    /* dummy read */
+    /* Chip_UART_ReadByte((LPC_USART_T *)device->loLayer); */
+    /* enable rx interrupt */
+    /* Chip_UART_IntEnable((LPC_USART_T *)device->loLayer, UART_IER_RBRINT); */
+
+    /* Restart FIFOS: set Enable, Reset content, set trigger level */
+    Chip_UART_SetupFIFOS(LPC_USART2, UART_FCR_FIFO_EN | UART_FCR_TX_RS | UART_FCR_RX_RS | UART_FCR_TRG_LEV0);
+    /* dummy read */
+    Chip_UART_ReadByte(LPC_USART2);
+    /* enable rx interrupt */
+    Chip_UART_IntEnable(LPC_USART2, UART_IER_RBRINT);
+#endif /* OPEN_FTDI232 */
+
+/*  desde  StartOS(AppMode1);
+    luego StartOs_Arch_Cpu();
+    luego Enable_User_ISRs(); */
+#ifndef OIL_EN_IRQ_USART2
+    NVIC_EnableIRQ(USART2_IRQn);
+#endif /* OIL_EN_IRQ_USART2 */
+
+    RingBuffer_Init(uarts[CIAA_UART_USB].rrb, rxbuf[CIAA_UART_USB], 1, UART_BUF_SIZE);
+    RingBuffer_Init(uarts[CIAA_UART_USB].trb, txbuf[CIAA_UART_USB], 1, UART_BUF_SIZE);
+#endif /* ENABLEUSB */
+
+    /* UART3 (RS232) */
+#define ENABLE232 0
+#if ENABLE232
+/*  desde ciaak_start();
+    luego ciaaDriverUart_init();
+    luego ciaaDriverUart_hwInit(); */
+#ifndef CIAAKSTART
+    /* UART3 (RS232) */
+    /* Chip_UART_Init(LPC_USART3); */
+    /* Chip_UART_SetBaud(LPC_USART3, 115200); */
+
+    /* Chip_UART_SetupFIFOS(LPC_USART3, UART_FCR_FIFO_EN | UART_FCR_TRG_LEV0);
+
+    /* Chip_UART_TXEnable(LPC_USART3); */
+
+    /* Chip_SCU_PinMux(2, 3, MD_PDN, FUNC2);              */ /* P2_3: UART3_TXD */
+    /* Chip_SCU_PinMux(2, 4, MD_PLN|MD_EZI|MD_ZI, FUNC2); */ /* P2_4: UART3_RXD */
+
+    /* UART3 (RS232) */
+    Chip_UART_Init(LPC_USART3);
+    Chip_UART_SetBaud(LPC_USART3, 115200);
+
+    Chip_UART_SetupFIFOS(LPC_USART3, UART_FCR_FIFO_EN | UART_FCR_TRG_LEV0);
+
+    Chip_UART_TXEnable(LPC_USART3);
+
+    Chip_SCU_PinMux(2, 3, MD_PDN, FUNC2);              /* P2_3: UART3_TXD */
+    Chip_SCU_PinMux(2, 4, MD_PLN|MD_EZI|MD_ZI, FUNC2); /* P2_4: UART3_RXD */
+#endif /* CIAAKSTART */
+
+/*  desde ciaaPOSIX_open("/dev/serial/uart/1", ciaaPOSIX_O_RDWR);
+    luego ciaaPOSIX_open(char const * path, uint8_t oflag);
+    luego ciaaPOSIX_assert(serialDevice->device->open(path, (ciaaDevices_deviceType *)device->loLayer, oflag) == device->loLayer);
+    luego ciaaDevices_deviceType * ciaaDriverUart_open(char const * path, ciaaDevices_deviceType * device, uint8_t const oflag) */
+#if OPEN_RS232
+#else
+    /* Restart FIFOS: set Enable, Reset content, set trigger level */
+    /* Chip_UART_SetupFIFOS((LPC_USART_T *)device->loLayer, UART_FCR_FIFO_EN | UART_FCR_TX_RS | UART_FCR_RX_RS | UART_FCR_TRG_LEV0);*/
+    /* dummy read */
+    /* Chip_UART_ReadByte((LPC_USART_T *)device->loLayer);*/
+    /* enable rx interrupt */
+    /* Chip_UART_IntEnable((LPC_USART_T *)device->loLayer, UART_IER_RBRINT);*/
+
+    /* Restart FIFOS: set Enable, Reset content, set trigger level */
+    Chip_UART_SetupFIFOS(LPC_USART3, UART_FCR_FIFO_EN | UART_FCR_TX_RS | UART_FCR_RX_RS | UART_FCR_TRG_LEV0);
+    /* dummy read */
+    Chip_UART_ReadByte(LPC_USART3);
+    /* enable rx interrupt */
+    Chip_UART_IntEnable(LPC_USART3, UART_IER_RBRINT);
+#endif /* OPEN_RS232 */
+/*  desde  StartOS(AppMode1);
+    luego StartOs_Arch_Cpu();
+    luego Enable_User_ISRs(); */
+
+#ifndef OIL_EN_IRQ_USART3
+    NVIC_EnableIRQ(USART3_IRQn);
+#endif /* OIL_EN_IRQ_USART2 */
+
+    RingBuffer_Init(uarts[CIAA_UART_232].rrb, rxbuf[CIAA_UART_232], 1, UART_BUF_SIZE);
+    RingBuffer_Init(uarts[CIAA_UART_232].trb, txbuf[CIAA_UART_232], 1, UART_BUF_SIZE);
+#endif /* ENABLE232 */
+}
+
+void uart_irq(ciaaUART_e n)
+{
+    uartData_t * u = &(uarts[n]);
+
+    Chip_UART_IRQRBHandler(u->uart, u->rrb, u->trb);
+}
+
+void UART0_IRQHandler(void)
+{
+    uart_irq(CIAA_UART_485);
+}
+
+void UART2_IRQHandler(void)
+{
+    uart_irq(CIAA_UART_USB);
+}
+
+void UART3_IRQHandler(void)
+{
+    uart_irq(CIAA_UART_232);
+}
+
+int uartSend(ciaaUART_e nUART, void * data, int datalen)
+{
+    uartData_t * u = &(uarts[nUART]);
+
+    return Chip_UART_SendRB(u->uart, u->trb, data, datalen);
+}
+
+int uartRecv(ciaaUART_e nUART, void * data, int datalen)
+{
+    uartData_t * u = &(uarts[nUART]);
+
+    return Chip_UART_ReadRB(u->uart, u->rrb, data, datalen);
+}
+
 
 /*==================[macros and definitions]=================================*/
 
@@ -92,17 +331,6 @@ static int32_t fd_in;
  */
 static int32_t fd_out;
 
-/** \brief File descriptor of the USB uart
- *
- * Device path /dev/serial/uart/1
- */
-static int32_t fd_uart1;
-
-/** \brief File descriptor of the RS232 uart
- *
- * Device path /dev/serial/uart/2
- */
-static int32_t fd_uart2;
 
 /** \brief Periodic Task Counter
  *
@@ -168,6 +396,9 @@ TASK(InitTask)
    /* init CIAA kernel and devices */
    ciaak_start();
 
+   // viene de ridolfi
+   Chip_UART_SetupFIFOS(LPC_USART2, UART_FCR_FIFO_EN | UART_FCR_TRG_LEV3);
+
    ciaaPOSIX_printf("Init Task...\n");
    /* open CIAA digital inputs */
    fd_in = ciaaPOSIX_open("/dev/dio/in/0", ciaaPOSIX_O_RDONLY);
@@ -175,17 +406,7 @@ TASK(InitTask)
    /* open CIAA digital outputs */
    fd_out = ciaaPOSIX_open("/dev/dio/out/0", ciaaPOSIX_O_RDWR);
 
-   /* open UART connected to USB bridge (FT2232) */
-   fd_uart1 = ciaaPOSIX_open("/dev/serial/uart/1", ciaaPOSIX_O_RDWR);
-
-   /* open UART connected to RS232 connector */
-   fd_uart2 = ciaaPOSIX_open("/dev/serial/uart/2", ciaaPOSIX_O_RDWR);
-
-   /* change baud rate for uart usb */
-   ciaaPOSIX_ioctl(fd_uart1, ciaaPOSIX_IOCTL_SET_BAUDRATE, (void *)ciaaBAUDRATE_115200);
-
-   /* change FIFO TRIGGER LEVEL for uart usb */
-   ciaaPOSIX_ioctl(fd_uart1, ciaaPOSIX_IOCTL_SET_FIFO_TRIGGER_LEVEL, (void *)ciaaFIFO_TRIGGER_LEVEL3);
+   ciaaUARTInit();
 
    /* activate example tasks */
    Periodic_Task_Counter = 0;
@@ -213,20 +434,22 @@ TASK(SerialEchoTask)
    ciaaPOSIX_printf("SerialEchoTask...\n");
    /* send a message to the world :) */
    char message[] = "Hi! :)\nSerialEchoTask: Waiting for characters...\n";
-   ciaaPOSIX_write(fd_uart1, message, ciaaPOSIX_strlen(message));
+   uartSend(CIAA_UART_USB, message, 49);
 
-   while(1)
+   if(1)
    {
       /* wait for any character ... */
-      ret = ciaaPOSIX_read(fd_uart1, buf, 20);
+      ret = uartRecv(CIAA_UART_USB, buf, 20);
 
       if(ret > 0)
       {
          /* ... and write them to the same device */
-         ciaaPOSIX_write(fd_uart1, buf, ret);
+         uartSend(CIAA_UART_USB, buf, ret);
 
+#if ENABLE232
          /* also write them to the other device */
-         ciaaPOSIX_write(fd_uart2, buf, ret);
+         uartSend(CIAA_UART_232, buf, ret);
+#endif
       }
 
       /* blink output 5 with each loop */
