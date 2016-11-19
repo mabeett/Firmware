@@ -63,22 +63,37 @@
  */
 
 /*==================[inclusions]=============================================*/
+#include "chip.h"             /* <= header for NVIC_SystemReset */
 #include "os.h"               /* <= operating system header */
 #include "ciaaPOSIX_stdio.h"  /* <= device handler header */
 #include "ciaaPOSIX_string.h" /* <= string header */
 #include "ciaak.h"            /* <= ciaa kernel header */
 #include "blinking_lwip.h"    /* <= own header */
+#include "ciaaDriverEth.h"    /* <= header for ciaaDriverEth_mainFunction() */
 
+
+// test
+#include <stdio.h>
+#include<stdarg.h>
 
 /*==================[macros and definitions]=================================*/
 
 /*==================[internal data declaration]==============================*/
 int fd_out;
+unsigned int print_counter;
 
 /*==================[internal functions declaration]=========================*/
 
 /*==================[internal data definition]===============================*/
+/** \brief File descriptor of the USB uart
+ *
+ * Device path /dev/serial/uart/1
+ */
+static int32_t fd_usb_uart;
 
+static unsigned int repeat_show = 1;
+#define LIM_SHOW_COUNTER	30
+static unsigned int show_counter = 0;
 /*==================[external data definition]===============================*/
 
 /*==================[internal functions definition]==========================*/
@@ -100,23 +115,48 @@ void ErrorHook(void)
 {
    ciaaPOSIX_printf("ErrorHook was called\n");
    ciaaPOSIX_printf("Service: %d, P1: %d, P2: %d, P3: %d, RET: %d\n", OSErrorGetServiceId(), OSErrorGetParam1(), OSErrorGetParam2(), OSErrorGetParam3(), OSErrorGetRet());
+
+   ciaaPOSIX_printf("SystemReset...\n");
+   NVIC_SystemReset();
+
    ShutdownOS(0);
 }
 
 TASK(InitTask)
 {
+   ciaaPOSIX_printf("ciaak_start()\n");
    /* init CIAA kernel and devices */
    ciaak_start();
 
    /* open CIAA digital outputs */
    fd_out = ciaaPOSIX_open("/dev/dio/out/0", ciaaPOSIX_O_RDWR);
 
-   /* start TCP echo example */
-   echo_init();
+   /* open UART connected to USB bridge (FT2232) */
+   fd_usb_uart = ciaaPOSIX_open("/dev/serial/uart/1", ciaaPOSIX_O_RDWR);
 
+   /* change baud rate for uart usb */
+   ciaaPOSIX_ioctl(fd_usb_uart, ciaaPOSIX_IOCTL_SET_BAUDRATE, (void *)ciaaBAUDRATE_115200);
+
+   /* change FIFO TRIGGER LEVEL for uart usb */
+   ciaaPOSIX_ioctl(fd_usb_uart, ciaaPOSIX_IOCTL_SET_FIFO_TRIGGER_LEVEL, (void *)ciaaFIFO_TRIGGER_LEVEL3);
+
+   dbg_load_uart(&fd_usb_uart);
+
+   char message[] = "Waiting for characters at port";
+   // ciaaPOSIX_write(fd_usb_uart, message, ciaaPOSIX_strlen(message));
+   // MTS_PLATFORM_DIAG(( message ));
+   // dbg_send(message, ciaaPOSIX_strlen(message));
+   MTS_PLATFORM_DIAG(("\nLwIP Version %d.%d.%d-%d DHCP %d\n%s %d - usando memoria estatica\n",
+      LWIP_VERSION_MAJOR, LWIP_VERSION_MINOR, LWIP_VERSION_REVISION,
+      LWIP_VERSION_RC, LWIP_DHCP,
+      message, 8000));
+
+
+   ciaaPOSIX_printf("SetRelAlarm(ActivateBlinkTask, 250, 250);\n");
    /* set blinky task */
    SetRelAlarm(ActivateBlinkTask, 250, 250);
 
+   ciaaPOSIX_printf("ActivateTask(PeriodicTask);\n");
    /* activate lwip loop as a background loop */
    ActivateTask(PeriodicTask);
 
@@ -133,6 +173,9 @@ TASK(BlinkTask)
 
    /* blink */
    outputs ^= 0x10;
+   print_counter++;
+   if (repeat_show)
+       show_counter++;
 
    /* write */
    ciaaPOSIX_write(fd_out, &outputs, 1);
@@ -144,8 +187,34 @@ TASK(BlinkTask)
 /* this task runs with the minimum priority */
 TASK(PeriodicTask)
 {
+// #define DOTDEBUG
+#ifdef DOTDEBUG
+   int print_divider = 0;
+#endif
+
+   ciaaPOSIX_printf("echo_init()\n");
+   /* start TCP echo example */
+   echo_init();
+
    while(1)
    {
+#ifdef DOTDEBUG
+      if (print_counter&1)
+      {
+          ciaaPOSIX_printf(".");
+          if (print_divider++ >= 10)
+          {
+             ciaaPOSIX_printf(" LWIP_RAND: %d\n", LWIP_RAND());
+             print_divider = 0;
+          }
+      }
+#endif /* DOTDEBUG */
+      if (show_counter > LIM_SHOW_COUNTER && repeat_show)
+      {
+         show_ipv6_addr();
+         repeat_show--;
+         show_counter = 0;
+      }
       /* lwip stack periodic loop */
       ciaaDriverEth_mainFunction();
    }

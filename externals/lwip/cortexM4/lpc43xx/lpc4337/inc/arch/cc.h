@@ -34,6 +34,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include "ciaaPOSIX_stdio.h"
 
 /** @ingroup NET_LWIP_ARCH
  * @{
@@ -106,7 +107,7 @@ typedef uintptr_t          mem_ptr_t;
 void assert_printf(char *msg, int line, char *file);
 
 /* Plaform specific diagnostic output */
-#define LWIP_PLATFORM_DIAG(vars) printf vars
+#define LWIP_PLATFORM_DIAG(vars) ciaaPOSIX_printf vars
 #define LWIP_PLATFORM_ASSERT(flag) { assert_printf((flag), __LINE__, __FILE__); }
 #else
 
@@ -122,5 +123,8 @@ void assert_loop(void);
 /**		  
  * @}
  */
+
+#define LWIP_RAND() ((u32_t)rand())
+
 
 #endif /* __CC_H__ */ 

@@ -57,7 +57,9 @@ patch -p1 < $LWIPDIR/patches/0005_lpc18xx_systick_arch.patch
 # example patches
 patch -p1 < $LWIPDIR/patches/0006_lpc_18xx43xx_emac_config.patch
 patch -p1 < $LWIPDIR/patches/0007_lwipopts_sample.patch
-patch -p1 < $LWIPDIR/patches/0008_lwipopts_comments.patch
+patch -p1 < $LWIPDIR/patches/0008_lwip_2_0_0_compatibility.patch
+patch -p1 < $LWIPDIR/patches/0009_mem_alignment.patch
+
 
 
 # Returning to called directory

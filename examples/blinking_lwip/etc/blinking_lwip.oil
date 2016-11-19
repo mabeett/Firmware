@@ -77,15 +77,16 @@ TASK PeriodicTask {
     PRIORITY = 1;
     ACTIVATION = 1;
     STACK = 2048;
-    TYPE = BASIC;
+    TYPE = EXTENDED;
     SCHEDULE = FULL;
     RESOURCE = POSIXR;
+    EVENT = POSIXE;
 }
 
 TASK BlinkTask {
     PRIORITY = 5;
     ACTIVATION = 1;
-    STACK = 2048;
+    STACK = 512;
     TYPE = EXTENDED;
     SCHEDULE = NON;
     RESOURCE = POSIXR;
@@ -130,6 +131,16 @@ ALARM IncrementSWCounter {
       ALARMTIME = 1;
       CYCLETIME = 1;
    };
+};
+
+ISR UART2_IRQHandler {
+/* #if BOARD == ciaa_fsl */
+/*   INTERRUPT = UART5; */
+/* #else */
+   INTERRUPT = UART2;
+/* #endif */
+   CATEGORY = 2;
+   PRIORITY = 0;
 };
 
 };
