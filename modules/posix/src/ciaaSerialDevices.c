@@ -276,9 +276,11 @@ extern ssize_t ciaaSerialDevices_read(ciaaDevices_deviceType const * const devic
    if (!ciaaLibs_circBufEmpty(&serialDevice->rxBuf))
    {
       /* try to read nbyte from rxBuf and store it to the user buffer */
+// serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_RX_INTERRUPT, (void*)false); // FIXME
       ret = ciaaLibs_circBufGet(&serialDevice->rxBuf,
             buf,
             nbyte);
+// serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_RX_INTERRUPT, (void*)true); // FIXME
    }
    else
    {
@@ -313,9 +315,11 @@ extern ssize_t ciaaSerialDevices_read(ciaaDevices_deviceType const * const devic
           * buffer. The event will be set first after adding some data into it */
 
          /* try to read nbyte from rxBuf and store it to the user buffer */
+// serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_RX_INTERRUPT, (void*)false); // FIXME
          ret = ciaaLibs_circBufGet(&serialDevice->rxBuf,
                buf,
                nbyte);
+// serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_RX_INTERRUPT, (void*)true); // FIXME
       }
    }
    return ret;
@@ -336,10 +340,12 @@ extern ssize_t ciaaSerialDevices_write(ciaaDevices_deviceType const * const devi
    {
       /* read head and space */
       head = cbuf->head;
+serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTERRUPT, (void*)false); // FIXME
       space = ciaaLibs_circBufSpace(cbuf, head);
 
       /* put bytes in the queue */
       ret = ciaaLibs_circBufPut(cbuf, buf, ciaaLibs_min(nbyte-total, space));
+serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTERRUPT, (void*)true); //FIXME
       /* update total of written bytes */
       total += ret;
 
@@ -385,13 +391,15 @@ extern void ciaaSerialDevices_txConfirmation(ciaaDevices_deviceType const * cons
    uint32_t write = 0;
    ciaaLibs_CircBufType * cbuf = &serialDevice->txBuf;
    uint32_t tail = cbuf->tail;
-   uint32_t rawCount = ciaaLibs_circBufRawCount(cbuf, tail);
+   uint32_t rawCount;
    uint32_t count = ciaaLibs_circBufCount(cbuf, tail);
    TaskType taskID = serialDevice->blocked.taskID;
 
    /* if some data have to be transmitted */
    if (count > 0)
    {
+serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTERRUPT, (void*)false); // FIXME
+      rawCount = ciaaLibs_circBufRawCount(cbuf, tail); // FIXME
       /* write data to the driver */
       write = serialDevice->device->write(device->loLayer, ciaaLibs_circBufReadPos(cbuf), rawCount);
 
@@ -399,7 +407,7 @@ extern void ciaaSerialDevices_txConfirmation(ciaaDevices_deviceType const * cons
       ciaaLibs_circBufUpdateHead(cbuf, write);
 
       /* if all bytes were written and more data is available */
-      if ( (write == rawCount) && (count > rawCount ) )
+      if ( (write == rawCount) && (count > rawCount ) ) // FIXME podría ser  traída desde una variable en vez de volver a calcular
       {
          /* re calculate rawCount */
          rawCount = ciaaLibs_circBufRawCount(cbuf, tail);
@@ -430,6 +438,8 @@ extern void ciaaSerialDevices_txConfirmation(ciaaDevices_deviceType const * cons
          SetEvent(taskID, POSIXE);
 #endif
       }
+serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTERRUPT, (void*)true); // FIXME
+
    }
 }
 
