@@ -405,10 +405,12 @@ serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTER
 
       /* update buffer */
       ciaaLibs_circBufUpdateHead(cbuf, write);
+serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTERRUPT, (void*)true); // FIXME
 
       /* if all bytes were written and more data is available */
-      if ( (write == rawCount) && (count > rawCount ) ) // FIXME podría ser  traída desde una variable en vez de volver a calcular
+      if ( (write == rawCount) && (count > write) )
       {
+serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTERRUPT, (void*)false); // FIXME
          /* re calculate rawCount */
          rawCount = ciaaLibs_circBufRawCount(cbuf, tail);
 
@@ -421,6 +423,7 @@ serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTER
             /* update buffer */
             ciaaLibs_circBufUpdateHead(cbuf, write);
          }
+serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTERRUPT, (void*)true); // FIXME
       }
       /* if task is blocked and waiting for reception of this device */
       if ( (255 != taskID) &&
@@ -438,8 +441,6 @@ serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTER
          SetEvent(taskID, POSIXE);
 #endif
       }
-serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTERRUPT, (void*)true); // FIXME
-
    }
 }
 
