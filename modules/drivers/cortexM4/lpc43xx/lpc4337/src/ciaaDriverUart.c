@@ -191,8 +191,7 @@ extern ciaaDevices_deviceType * ciaaDriverUart_open(char const * path, ciaaDevic
    /* dummy read */
    Chip_UART_ReadByte((LPC_USART_T *)device->loLayer);
    /* enable rx interrupt */
-   // Chip_UART_IntEnable((LPC_USART_T *)device->loLayer, UART_IER_RBRINT);
-   Chip_UART_IntDisable((LPC_USART_T *)device->loLayer, UART_IER_RBRINT); // No queremos interrupción de lectura uart
+   Chip_UART_IntEnable((LPC_USART_T *)device->loLayer, UART_IER_RBRINT);
 
    return device;
 }
@@ -254,8 +253,7 @@ extern int32_t ciaaDriverUart_ioctl(ciaaDevices_deviceType const * const device,
             else
             {
                /* enable RBR irq (RX) */
-               // Chip_UART_IntEnable((LPC_USART_T *)device->loLayer, UART_IER_RBRINT);
-               Chip_UART_IntDisable((LPC_USART_T *)device->loLayer, UART_IER_RBRINT); // No queremos interrupción de lectura uart
+               Chip_UART_IntEnable((LPC_USART_T *)device->loLayer, UART_IER_RBRINT);
             }
             break;
       }
