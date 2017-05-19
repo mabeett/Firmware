@@ -66,7 +66,8 @@ typedef struct {
 
 typedef struct {
    ciaaDevices_deviceType const * device;
-   ciaaSerialDevices_blockerType blocked;
+   ciaaSerialDevices_blockerType blockedWrite;
+   ciaaSerialDevices_blockerType blockedRead;
    ciaaLibs_CircBufType rxBuf;
    ciaaLibs_CircBufType txBuf;
    uint8_t flags;
@@ -112,8 +113,10 @@ extern void ciaaSerialDevices_init(void)
    for(loopi = 0; ciaaSerialDevices_MAXDEVICES > loopi; loopi++)
    {
       /* set invalid task as default */
-      ciaaSerialDevices.devstr[loopi].blocked.taskID = 255; /* TODO */
-      ciaaSerialDevices.devstr[loopi].blocked.fct = NULL;
+      ciaaSerialDevices.devstr[loopi].blockedWrite.taskID = 255; /* TODO */
+      ciaaSerialDevices.devstr[loopi].blockedWrite.fct = NULL;
+      ciaaSerialDevices.devstr[loopi].blockedRead.taskID = 255; /* TODO */
+      ciaaSerialDevices.devstr[loopi].blockedRead.fct = NULL;
    }
 }
 
@@ -305,8 +308,8 @@ extern ssize_t ciaaSerialDevices_read(ciaaDevices_deviceType const * const devic
          // serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_RX_INTERRUPT, (void*)false); // FIXME
 
          /* get task id and function for waking up the task later */
-         GetTaskID(&serialDevice->blocked.taskID);
-         serialDevice->blocked.fct = (void*) ciaaSerialDevices_read;
+         GetTaskID(&serialDevice->blockedRead.taskID);
+         serialDevice->blockedRead.fct = (void*) ciaaSerialDevices_read;
 
          /* TODO improve this: https://github.com/ciaa/Firmware/issues/88 */
          serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_RX_INTERRUPT, (void*)true);
@@ -372,8 +375,8 @@ serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTER
          /* TODO improve this: https://github.com/ciaa/Firmware/issues/88 */
          serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTERRUPT, (void*)false);
          /* get task id and function for waking up the task later */
-         GetTaskID(&serialDevice->blocked.taskID);
-         serialDevice->blocked.fct = (void*) ciaaSerialDevices_write;
+         GetTaskID(&serialDevice->blockedWrite.taskID);
+         serialDevice->blockedWrite.fct = (void*) ciaaSerialDevices_write;
 
          /* TODO improve this: https://github.com/ciaa/Firmware/issues/88 */
          serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTERRUPT, (void*)true);
@@ -400,7 +403,7 @@ extern void ciaaSerialDevices_txConfirmation(ciaaDevices_deviceType const * cons
    uint32_t tail = cbuf->tail;
    uint32_t rawCount;
    uint32_t count = ciaaLibs_circBufCount(cbuf, tail);
-   TaskType taskID = serialDevice->blocked.taskID;
+   TaskType taskID = serialDevice->blockedWrite.taskID;
 
    /* if some data have to be transmitted */
    if (count > 0)
@@ -434,14 +437,14 @@ serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTER
       }
       /* if task is blocked and waiting for reception of this device */
       if ( (255 != taskID) &&
-            (serialDevice->blocked.fct ==
+            (serialDevice->blockedWrite.fct ==
              (void*) ciaaSerialDevices_write) )
       {
          /* invalidate task id */
-         serialDevice->blocked.taskID = 255; /* TODO add a macro */
+         serialDevice->blockedWrite.taskID = 255; /* TODO add a macro */
 
          /* reset function */
-         serialDevice->blocked.fct = NULL;
+         serialDevice->blockedWrite.fct = NULL;
 
          /* set task event */
 #ifdef POSIXE
@@ -462,7 +465,7 @@ extern void ciaaSerialDevices_rxIndication(ciaaDevices_deviceType const * const 
    uint32_t rawSpace;
    uint32_t space;
    uint32_t read = 0;
-   TaskType taskID = serialDevice->blocked.taskID;
+   TaskType taskID = serialDevice->blockedRead.taskID;
 
    serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_RX_INTERRUPT, (void*)false); // FIXME
    head = cbuf->head;
@@ -504,13 +507,13 @@ extern void ciaaSerialDevices_rxIndication(ciaaDevices_deviceType const * const 
 
    /* if data has been read */
    if ( (0 < read) && (255 != taskID) &&
-         (serialDevice->blocked.fct == (void*) ciaaSerialDevices_read ) )
+         (serialDevice->blockedRead.fct == (void*) ciaaSerialDevices_read ) )
    {
       /* invalidate task id */
-      serialDevice->blocked.taskID = 255; /* TODO add macro */
+      serialDevice->blockedRead.taskID = 255; /* TODO add macro */
 
       /* reset blocked function */
-      serialDevice->blocked.fct = NULL;
+      serialDevice->blockedRead.fct = NULL;
 
 #ifdef POSIXE
       /* set task event */ // <-- GW IOT setear evento en rutina de interrupcion AFAIR
