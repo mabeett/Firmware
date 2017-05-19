@@ -237,11 +237,11 @@ extern int32_t ciaaSerialDevices_ioctl(ciaaDevices_deviceType const * const devi
          break;
 
       case ciaaPOSIX_IOCTL_GET_TX_SPACE:
-         serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_RX_INTERRUPT, (void*)false); // FIXME
+         serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTERRUPT, (void*)false); // FIXME
          cbuf = &serialDevice->txBuf;
          head = cbuf->head;
          *(uint32_t *)param = ciaaLibs_circBufSpace(cbuf, head);
-         serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_RX_INTERRUPT, (void*)true); // FIXME
+         serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTERRUPT, (void*)true); // FIXME
          ret = 0;
          break;
 
