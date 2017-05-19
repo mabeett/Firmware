@@ -134,13 +134,13 @@ static ciaaDriverConstType const ciaaDriverUartConst = {
 static void ciaaDriverUart_rxIndication(ciaaDevices_deviceType const * const device, uint32_t const nbyte)
 {
    /* receive the data and forward to upper layer */
-   ciaaSerialDevices_rxIndication(device->upLayer, nbyte);
+   ciaaSerialDevices_rxIndication(device->upLayer, nbyte); // <- GW_IOT  seguir
 }
 
 static void ciaaDriverUart_txConfirmation(ciaaDevices_deviceType const * const device)
 {
    /* receive the data and forward to upper layer */
-   ciaaSerialDevices_txConfirmation(device->upLayer, 1 );
+   ciaaSerialDevices_txConfirmation(device->upLayer, 1 );  // <- GW_IOT  seguir
 }
 
 static void ciaaDriverUart_hwInit(void)
@@ -365,6 +365,7 @@ ISR(UART0_IRQHandler)
    }
 }
 
+// GW_IOT se convierte despues de la macro en OSEK_ISR_UART2_IRQHandler
 ISR(UART2_IRQHandler)
 {
    uint8_t status = Chip_UART_ReadLineStatus(LPC_USART2);
@@ -378,12 +379,12 @@ ISR(UART2_IRQHandler)
       }while((Chip_UART_ReadLineStatus(LPC_USART2) & UART_LSR_RDR) &&
              (uartControl[1].rxcnt < UART_RX_FIFO_SIZE));
 
-      ciaaDriverUart_rxIndication(&ciaaDriverUart_device1, uartControl[1].rxcnt);
+      ciaaDriverUart_rxIndication(&ciaaDriverUart_device1, uartControl[1].rxcnt); // <-- GW_IOT :seguir
    }
    if((status & UART_LSR_THRE) && (Chip_UART_GetIntsEnabled(LPC_USART2) & UART_IER_THREINT))
    {
       /* tx confirmation, 1 byte sent */
-      ciaaDriverUart_txConfirmation(&ciaaDriverUart_device1);
+      ciaaDriverUart_txConfirmation(&ciaaDriverUart_device1); //  <-- GW_IOT :seguir
 
       if(Chip_UART_ReadLineStatus(LPC_USART2) & UART_LSR_THRE)
       {  /* There is not more bytes to send, disable THRE irq */

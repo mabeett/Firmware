@@ -389,6 +389,7 @@ serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTER
    return total;
 }
 
+// GW_IOT es llamada desde ciaaDriverUart_txConfirmation y esta otra desde ISR(UART2_IRQHandler)
 extern void ciaaSerialDevices_txConfirmation(ciaaDevices_deviceType const * const device, uint32_t const nbyte)
 {
    /* get serial device */
@@ -444,12 +445,13 @@ serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTER
 
          /* set task event */
 #ifdef POSIXE
-         SetEvent(taskID, POSIXE);
+         SetEvent(taskID, POSIXE); // <-- GW IOT setear evento en rutina de interrupcion AFAIR
 #endif
       }
    }
 }
 
+// GW_IOT es llamada desde ciaaDriverUart_rxIndication y esta otra desde ISR(UART2_IRQHandler)
 extern void ciaaSerialDevices_rxIndication(ciaaDevices_deviceType const * const device, uint32_t const nbyte)
 {
    /* get serial device */
@@ -511,7 +513,7 @@ extern void ciaaSerialDevices_rxIndication(ciaaDevices_deviceType const * const 
       serialDevice->blocked.fct = NULL;
 
 #ifdef POSIXE
-      /* set task event */
+      /* set task event */ // <-- GW IOT setear evento en rutina de interrupcion AFAIR
       SetEvent(taskID, POSIXE);
 #endif
    }
