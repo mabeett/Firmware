@@ -315,9 +315,9 @@ extern ssize_t ciaaSerialDevices_read(ciaaDevices_deviceType const * const devic
          serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_RX_INTERRUPT, (void*)true);
 
          /* if no data wait for it */
-#ifdef POSIXE
-         WaitEvent(POSIXE);
-         ClearEvent(POSIXE);
+#ifdef POSIXESR
+         WaitEvent(POSIXESR);
+         ClearEvent(POSIXESR);
 #endif
 
          /* after the wait is not needed to check if data is avaibale on the
@@ -381,9 +381,9 @@ serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTER
          /* TODO improve this: https://github.com/ciaa/Firmware/issues/88 */
          serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTERRUPT, (void*)true);
          /* wait to write all data or for the txConfirmation */
-#ifdef POSIXE
-         WaitEvent(POSIXE);
-         ClearEvent(POSIXE);
+#ifdef POSIXESW
+         WaitEvent(POSIXESW);
+         ClearEvent(POSIXESW);
 #endif
       }
    }
@@ -447,8 +447,8 @@ serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTER
          serialDevice->blockedWrite.fct = NULL;
 
          /* set task event */
-#ifdef POSIXE
-         SetEvent(taskID, POSIXE); // <-- GW IOT setear evento en rutina de interrupcion AFAIR
+#ifdef POSIXESW
+         SetEvent(taskID, POSIXESW); // <-- GW IOT setear evento en rutina de interrupcion AFAIR
 #endif
       }
    }
@@ -515,9 +515,9 @@ extern void ciaaSerialDevices_rxIndication(ciaaDevices_deviceType const * const 
       /* reset blocked function */
       serialDevice->blockedRead.fct = NULL;
 
-#ifdef POSIXE
+#ifdef POSIXESR
       /* set task event */ // <-- GW IOT setear evento en rutina de interrupcion AFAIR
-      SetEvent(taskID, POSIXE);
+      SetEvent(taskID, POSIXESR);
 #endif
    }
 }
