@@ -230,7 +230,7 @@ TASK(SerialEchoTask)
          ciaaPOSIX_write(fd_uart1, message, ret);
 
          /* also write them to the other device */
-         ciaaPOSIX_write(fd_uart2, message, ret);
+         // ciaaPOSIX_write(fd_uart2, message, ret);
       }
 
       /* blink output 5 with each loop */

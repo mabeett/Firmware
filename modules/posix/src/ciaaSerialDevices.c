@@ -284,7 +284,6 @@ extern ssize_t ciaaSerialDevices_read(ciaaDevices_deviceType const * const devic
    if (!ciaaLibs_circBufEmpty(&serialDevice->rxBuf))
    {
       /* try to read nbyte from rxBuf and store it to the user buffer */
-// serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_RX_INTERRUPT, (void*)false); // FIXME
       ret = ciaaLibs_circBufGet(&serialDevice->rxBuf,
             buf,
             nbyte);
@@ -463,24 +462,24 @@ extern void ciaaSerialDevices_rxIndication(ciaaDevices_deviceType const * const 
    uint32_t read = 0;
    TaskType taskID = serialDevice->blockedRead.taskID;
 
-   serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_RX_INTERRUPT, (void*)false); // FIXME
+// FIXME   serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_RX_INTERRUPT, (void*)false); // FIXME
    head = cbuf->head;
    rawSpace = ciaaLibs_circBufRawSpace(cbuf, head);
    space = ciaaLibs_circBufSpace(cbuf, head);
    read = serialDevice->device->read(device->loLayer, ciaaLibs_circBufWritePos(cbuf), rawSpace);
-   serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_RX_INTERRUPT, (void*)true);  // FIXME
+// FIXME    serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_RX_INTERRUPT, (void*)true);  // FIXME
 
    /* if rawSpace is full but more space is avaialble */
    if ((read == rawSpace) && (space > rawSpace))
    {
       /* re calculate rawSpace */
-      serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_RX_INTERRUPT, (void*)false); // FIXME
+// FIXME       serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_RX_INTERRUPT, (void*)false); // FIXME
       rawSpace = ciaaLibs_circBufRawCount(cbuf, head);
       read += serialDevice->device->read(
             device->loLayer,
             ciaaLibs_circBufWritePos(cbuf),
             rawSpace);
-      serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_RX_INTERRUPT, (void*)true);  // FIXME
+// FIXME      serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_RX_INTERRUPT, (void*)true);  // FIXME
    }
    else
    {
@@ -497,9 +496,9 @@ extern void ciaaSerialDevices_rxIndication(ciaaDevices_deviceType const * const 
    }
 
    /* update tail */
-   serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_RX_INTERRUPT, (void*)false); // FIXME
+// FIXME   serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_RX_INTERRUPT, (void*)false); // FIXME
    ciaaLibs_circBufUpdateTail(cbuf, read);
-   serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_RX_INTERRUPT, (void*)true);  // FIXME
+// FIXME   serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_RX_INTERRUPT, (void*)true);  // FIXME
 
    /* if data has been read */
    if ( (0 < read) && (255 != taskID) &&
