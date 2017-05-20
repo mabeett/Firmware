@@ -408,19 +408,16 @@ extern void ciaaSerialDevices_txConfirmation(ciaaDevices_deviceType const * cons
    /* if some data have to be transmitted */
    if (count > 0)
    {
-serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTERRUPT, (void*)false); // FIXME
       rawCount = ciaaLibs_circBufRawCount(cbuf, tail); // FIXME
       /* write data to the driver */
       write = serialDevice->device->write(device->loLayer, ciaaLibs_circBufReadPos(cbuf), rawCount);
 
       /* update buffer */
       ciaaLibs_circBufUpdateHead(cbuf, write);
-serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTERRUPT, (void*)true); // FIXME
 
       /* if all bytes were written and more data is available */
       if ( (write == rawCount) && (count > write) )
       {
-serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTERRUPT, (void*)false); // FIXME
          /* re calculate rawCount */
          rawCount = ciaaLibs_circBufRawCount(cbuf, tail);
 
@@ -433,7 +430,6 @@ serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTER
             /* update buffer */
             ciaaLibs_circBufUpdateHead(cbuf, write);
          }
-serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTERRUPT, (void*)true); // FIXME
       }
       /* if task is blocked and waiting for reception of this device */
       if ( (255 != taskID) &&

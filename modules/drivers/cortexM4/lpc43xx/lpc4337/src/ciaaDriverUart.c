@@ -356,7 +356,11 @@ ISR(UART0_IRQHandler)
    if((status & UART_LSR_THRE) && (Chip_UART_GetIntsEnabled(LPC_USART0) & UART_IER_THREINT))
    {
       /* tx confirmation, 1 byte sent */
+      /* disable THRE irq (TX) */
+      Chip_UART_IntDisable(LPC_USART0, UART_IER_THREINT);
       ciaaDriverUart_txConfirmation(&ciaaDriverUart_device0);
+      /* enable THRE irq (TX) */
+      Chip_UART_IntEnable(LPC_USART0, UART_IER_THREINT);
 
       if(Chip_UART_ReadLineStatus(LPC_USART0) & UART_LSR_THRE)
       {  /* There is not more bytes to send, disable THRE irq */
@@ -384,7 +388,11 @@ ISR(UART2_IRQHandler)
    if((status & UART_LSR_THRE) && (Chip_UART_GetIntsEnabled(LPC_USART2) & UART_IER_THREINT))
    {
       /* tx confirmation, 1 byte sent */
+      /* disable THRE irq (TX) */
+      Chip_UART_IntDisable(LPC_USART2, UART_IER_THREINT);
       ciaaDriverUart_txConfirmation(&ciaaDriverUart_device1); //  <-- GW_IOT :seguir
+      /* enable THRE irq (TX) */
+      Chip_UART_IntEnable(LPC_USART2, UART_IER_THREINT);
 
       if(Chip_UART_ReadLineStatus(LPC_USART2) & UART_LSR_THRE)
       {  /* There is not more bytes to send, disable THRE irq */
@@ -411,7 +419,11 @@ ISR(UART3_IRQHandler)
    if((status & UART_LSR_THRE) && (Chip_UART_GetIntsEnabled(LPC_USART3) & UART_IER_THREINT))
    {
       /* tx confirmation, 1 byte sent */
+      /* disable THRE irq (TX) */
+      Chip_UART_IntDisable(LPC_USART3, UART_IER_THREINT);
       ciaaDriverUart_txConfirmation(&ciaaDriverUart_device2);
+      /* enable THRE irq (TX) */
+      Chip_UART_IntEnable(LPC_USART3, UART_IER_THREINT);
 
       if(Chip_UART_ReadLineStatus(LPC_USART3) & UART_LSR_THRE)
       {  /* There is not more bytes to send, disable THRE irq */
