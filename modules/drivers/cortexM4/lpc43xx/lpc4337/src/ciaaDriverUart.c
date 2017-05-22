@@ -376,21 +376,13 @@ ISR(UART2_IRQHandler)
 
    if(status & UART_LSR_RDR)
    {
-#if 1 //while primero
-      while((Chip_UART_ReadLineStatus(LPC_USART2) & UART_LSR_RDR) &&
-             (uartControl[1].rxcnt < UART_RX_FIFO_SIZE))
-      {
-         uartControl[1].hwbuf[uartControl[1].rxcnt] = Chip_UART_ReadByte(LPC_USART2);
-         uartControl[1].rxcnt++;
-      }
-#else // así es el código original
       do
       {
          uartControl[1].hwbuf[uartControl[1].rxcnt] = Chip_UART_ReadByte(LPC_USART2);
          uartControl[1].rxcnt++;
       }while((Chip_UART_ReadLineStatus(LPC_USART2) & UART_LSR_RDR) &&
              (uartControl[1].rxcnt < UART_RX_FIFO_SIZE));
-#endif
+
       Chip_UART_IntDisable(LPC_USART2, UART_IER_RBRINT);
       ciaaDriverUart_rxIndication(&ciaaDriverUart_device1, uartControl[1].rxcnt); // <-- GW_IOT :seguir
       Chip_UART_IntEnable(LPC_USART2, UART_IER_RBRINT);
