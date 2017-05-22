@@ -366,6 +366,8 @@ serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTER
       /* if not all bytes could be stored in the buffer */
       if (total < nbyte)
       {
+      SET_O6(1);
+      SET_O8(1);
          /* increment buffer */
          buf += ret;
 
@@ -385,6 +387,7 @@ serialDevice->device->ioctl(device->loLayer, ciaaPOSIX_IOCTL_SET_ENABLE_TX_INTER
          ClearEvent(POSIXESW);
 #endif
       }
+      SET_O8(0);
    }
    while (total < nbyte);
 

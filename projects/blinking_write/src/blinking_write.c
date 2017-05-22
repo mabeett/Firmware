@@ -73,7 +73,8 @@
 #include "ciaak.h"            /* <= ciaa kernel header */
 #include "blinking_write.h"         /* <= own header */
 
-#include "ciaaPOSIX_stdlib.h" 
+#include "ciaaPOSIX_stdlib.h"
+#include "gpioled.h"
 
 /*==================[macros and definitions]=================================*/
 
@@ -234,9 +235,9 @@ TASK(SerialEchoTask)
       }
 
       /* blink output 5 with each loop */
-      ciaaPOSIX_read(fd_out, &outputs, 1);
-      outputs ^= 0x20;
-      ciaaPOSIX_write(fd_out, &outputs, 1);
+    //   ciaaPOSIX_read(fd_out, &outputs, 1);
+    //   outputs ^= 0x20;
+    //   ciaaPOSIX_write(fd_out, &outputs, 1);
    }
 #endif
 }
@@ -249,6 +250,7 @@ TASK(SerialEchoTask)
  */
 TASK(PeriodicTask)
 {
+SET_O7(1);
    /*
     * Example:
     *    Read inputs 0..3, update outputs 0..3.
@@ -277,9 +279,10 @@ TASK(PeriodicTask)
 
    /* Print Task info */
    Periodic_Task_Counter++;
-   ciaaPOSIX_printf("Periodic Task: %d\n", Periodic_Task_Counter);
+//   ciaaPOSIX_printf("Periodic Task: %d\n", Periodic_Task_Counter);
 
    /* end PeriodicTask */
+SET_O7(0);
    TerminateTask();
 }
 
