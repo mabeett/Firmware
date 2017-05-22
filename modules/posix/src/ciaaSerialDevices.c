@@ -53,6 +53,7 @@
 #include "ciaaLibs_CircBuf.h"
 #include "ciaak.h"       /* <= ciaa kernel header */
 #include "os.h"
+#include "gpioled.h"
 
 /*==================[macros and definitions]=================================*/
 #define ciaaSerialDevices_MAXDEVICES          20
