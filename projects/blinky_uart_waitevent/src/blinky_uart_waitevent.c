@@ -69,7 +69,10 @@
 
 
 // better not toggle, in order to know if the bug before or after WaitEvent
-#define	TOGGLE	0
+#define	TOGGLE	1
+
+#define	PAN	0
+#define QUESO   1
 
  
 /*==================[macros and definitions]=================================*/
@@ -79,6 +82,10 @@
 /*==================[internal functions declaration]=========================*/
 
 /*==================[internal data definition]===============================*/
+
+bool task3val = PAN;
+bool task4val = PAN;
+
 
 /*==================[external data definition]===============================*/
 
@@ -141,32 +148,36 @@ TASK(InitTask)
 
    ciaaIOInit();
    ciaaUARTInit();
-   SetRelAlarm(ActivatePeriodicTask, 350, 250);
-   SetRelAlarm(ActivatePeriodicTask2, 250, 50);
-   ActivateTask(PeriodicTask3);
+   SetRelAlarm(ActivateBlinkTask1, 350, 250);
+   SetRelAlarm(ActivateBlinkTask2, 250, 50);
+   ActivateTask(WaitTask3);
+   ActivateTask(WaitTask4);
 
    /* terminate task */
    TerminateTask();
 }
 
-/** \brief Periodic Task
+/** \brief Blink Task
  *
  * This task is started automatically every time that the alarm
- * ActivatePeriodicTask expires.
+ * ActivateBlinkTask1 expires.
  *
  */
-TASK(PeriodicTask)
+TASK(BlinkTask1)
 {
    /* add your cycle code here */
 
 #if (edu_ciaa_nxp == BOARD)
    ciaaToggleOutput(LEDG);
+#elif (ciaa_nxp == BOARD)
+   ciaaToggleOutput(LED1);
 #endif
+
    /* terminate task */
    TerminateTask();
 }
 
-TASK(PeriodicTask2)
+TASK(BlinkTask2)
 {
    /* add your cycle code here */
    ciaaToggleOutput(LEDB);
@@ -174,9 +185,9 @@ TASK(PeriodicTask2)
    TerminateTask();
 }
 
-TASK(PeriodicTask3)
+TASK(WaitTask3)
 {
-//   ciaaWriteOutput(LED1, 1);
+//   ciaaWriteOutput(LED2, 1);
 
    while(1) 
    {
@@ -185,18 +196,41 @@ TASK(PeriodicTask3)
 #if TOGGLE
       WaitEvent(TESTW);
       ClearEvent(TESTW);
-//      ciaaToggleOutput(LED1);
+      task3val = PAN;
+      ciaaToggleOutput(LED2);
 #else
-      ciaaWriteOutput(LED1, 1);
+      ciaaWriteOutput(LED2, 1);
       WaitEvent(TESTW);
       ClearEvent(TESTW);
-      ciaaWriteOutput(LED1, 0);
+      task3val = PAN;
+      ciaaWriteOutput(LED2, 0);
 #endif
    }
    TerminateTask();
 }
 
 
+TASK(WaitTask4)
+{
+
+   while(1)
+   {
+      /* add your cycle code here */
+#if TOGGLE
+      WaitEvent(TESTW);
+      ClearEvent(TESTW);
+      task4val = PAN;
+#else
+      WaitEvent(TESTW);
+      ClearEvent(TESTW);
+      task4val = PAN;
+#endif
+   }
+   TerminateTask();
+}
+
+
+// FTDI
 ISR(UART2_IRQHandler)
 {
    uint8_t status = Chip_UART_ReadLineStatus(LPC_USART2);
@@ -215,16 +249,21 @@ ISR(UART2_IRQHandler)
       ** Siguendo el stack de rxIndication en esas condicioens hay un SetEvent
       ** para la tarea que pidio read y quedo detenida en WaitEvent()
       */
-      SetEvent(PeriodicTask3, TESTW);
+      if(task3val == PAN)
+      {
+         task3val = QUESO;
+         SetEvent(WaitTask3, TESTW);
+      }
    }
    ciaaWriteOutput(LED3, 0);
 }
 
 #if 1
+
+// RS232 when available
 ISR(UART3_IRQHandler)
 {
    uint8_t status = Chip_UART_ReadLineStatus(LPC_USART3);
-   ciaaWriteOutput(LED2, 1);
 
 
    if(status & UART_LSR_RDR)
@@ -239,9 +278,12 @@ ISR(UART3_IRQHandler)
       ** Siguendo el stack de rxIndication en esas condicioens hay un SetEvent
       ** para la tarea que pidio read y quedo detenida en WaitEvent()
       */
-      // SetEvent(PeriodicTask3, TESTW);
+      if(task4val == PAN)
+      {
+         task4val = QUESO;
+         SetEvent(WaitTask4, TESTW);
+      }
    }
-   ciaaWriteOutput(LED2, 0);
 }
 #endif
 

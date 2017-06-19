@@ -69,31 +69,25 @@ OSEK OSEK {
    }
 
 
-   TASK PeriodicTask {
+   TASK BlinkTask1 {
       PRIORITY = 3;
       ACTIVATION = 1;
       STACK = 512;
       TYPE = EXTENDED;
       EVENT = TESTW;
       SCHEDULE = NON;
-      AUTOSTART = TRUE {
-       APPMODE = AppMode1;
-      }
    }
 
-   TASK PeriodicTask2 {
+   TASK BlinkTask2 {
       PRIORITY = 2;
       ACTIVATION = 1;
       STACK = 512;
       TYPE = EXTENDED;
       EVENT = TESTW;
       SCHEDULE = NON;
-      AUTOSTART = TRUE {
-       APPMODE = AppMode1;
-      }
    }
 
-   TASK PeriodicTask3 {
+   TASK WaitTask3 {
       PRIORITY = 1;
       ACTIVATION = 1;
       STACK = 512;
@@ -103,19 +97,29 @@ OSEK OSEK {
 /*      SCHEDULE = NON;  usando NON Preemptive el sistema funciona correctamente */
    }
 
+   TASK WaitTask4 {
+      PRIORITY = 1;
+      ACTIVATION = 1;
+      STACK = 512;
+      TYPE = EXTENDED;
+      EVENT = TESTW;
+      SCHEDULE = FULL;
+/*      SCHEDULE = NON;  usando NON Preemptive el sistema funciona correctamente */
+   }
+
    EVENT = TESTW;
 
-   ALARM ActivatePeriodicTask {
+   ALARM ActivateBlinkTask1 {
       COUNTER = HardwareCounter;
       ACTION = ACTIVATETASK {
-         TASK = PeriodicTask;
+         TASK = BlinkTask1
       }
    }
 
-   ALARM ActivatePeriodicTask2 {
+   ALARM ActivateBlinkTask2 {
       COUNTER = HardwareCounter;
       ACTION = ACTIVATETASK {
-         TASK = PeriodicTask2;
+         TASK = BlinkTask2;
       }
    }
 
